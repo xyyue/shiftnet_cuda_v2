@@ -34,7 +34,7 @@ def main():
   # ctrl_cpu = ctrl_cpu.type(torch.IntTensor)
   ctrl = ctrl_cpu.cuda()
   #ret = shiftnet_cuda.moduloshift3x3_nchw(x, y)
-  ret = shiftnet_cuda.moduloshiftgeneric_nchw(x, y, ctrl, 3, 1, 1)
+  ret = shiftnet_cuda.shift_generic_nchw_ctrl(x, y, ctrl, 3, 1, 1)
   assert ret == 1
 
   x_hout = x.cpu()

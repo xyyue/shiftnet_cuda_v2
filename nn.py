@@ -1,20 +1,4 @@
-"""
-Copyright 2017 the shiftnet_cuda_v2 authors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
-import shiftnet_cuda
+from . import shiftnet_cuda
 import torch
 from torch.autograd import Function, Variable
 
@@ -35,18 +19,21 @@ class ShiftFn(Function):
 
 class GenericShiftFn(Function):
   @staticmethod
-  def forward(ctx, src, kernel_size, dilate_factor):
+  def forward(ctx, src, kernel_size, dilate_factor, ctrl):
     ctx.kernel_size = kernel_size
     ctx.dilate_factor = dilate_factor
+    ctx.ctrl = ctrl
+    # print 'debug: src size', src.size()
     dst = torch.cuda.FloatTensor(src.size())
-    ret = shiftnet_cuda.moduloshiftgeneric_nchw(src, dst, kernel_size, dilate_factor, 1)
+    # print 'debug: dst size', dst.size()
+    ret = shiftnet_cuda.shift_generic_nchw_ctrl(src, dst, ctrl, kernel_size, dilate_factor, 1)
     assert ret == 1, "GenericShiftFn: forward: invalid args, your kernel or dilation are probably too large"
     return dst
 
   @staticmethod
   def backward(ctx, grad_dst):
     grad_src = torch.cuda.FloatTensor(grad_dst.data.size())
-    ret = shiftnet_cuda.moduloshiftgeneric_nchw(grad_dst.data, grad_src, ctx.kernel_size, ctx.dilate_factor, -1)
+    ret = shiftnet_cuda.shift_generic_nchw_ctrl(grad_dst.data, grad_src, ctx.ctrl, ctx.kernel_size, ctx.dilate_factor, -1)
     assert ret == 1, "GenericShiftFn: backward: invalid args, your kernel or dilation are probably too large"
     return Variable(grad_src, requires_grad=grad_dst.requires_grad), None, None
 
@@ -58,10 +45,11 @@ class Shift3x3_cuda(torch.nn.Module):
         return ShiftFn.apply(x)
 
 class GenericShift_cuda(torch.nn.Module):
-    def __init__(self, kernel_size, dilate_factor=1):
+    def __init__(self, kernel_size, dilate_factor=1, ctrl):
         super(GenericShift_cuda, self).__init__()
         self._kernel_size = kernel_size
         self._dilate_factor = dilate_factor
+        self._ctrl = ctrl
 
     def forward(self, x):
-        return GenericShiftFn.apply(x, self._kernel_size, self._dilate_factor)
+        return GenericShiftFn.apply(x, self._kernel_size, self._dilate_factor, self._ctrl)
