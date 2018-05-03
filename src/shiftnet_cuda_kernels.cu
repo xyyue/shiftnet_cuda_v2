@@ -213,7 +213,7 @@ __global__ void shiftnet_cuda_shift_generic_nchw_float32_kernel_tilein16x16_ctrl
   // __shared__ int ctrl_val;
   const int num_blocks = batch_sz * channels * num_h_tiles * num_w_tiles;
   const int num_threads = blockDim.x * num_blocks;
-  const int rd_chans = (channels / (kernel_size * kernel_size)) * (kernel_size * kernel_size);
+  // const int rd_chans = (channels / (kernel_size * kernel_size)) * (kernel_size * kernel_size);
   const int half_kernel_size = kernel_size / 2;
   const int dilated_half_kernel_size = dilate_factor * half_kernel_size;
   for (int idx = threadIdx.x + blockDim.x * blockIdx.x; idx < num_threads; idx += blockDim.x * gridDim.x)
