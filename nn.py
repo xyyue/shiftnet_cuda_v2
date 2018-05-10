@@ -19,10 +19,10 @@ class ShiftFn(Function):
 
 class GenericShiftFn(Function):
   @staticmethod
-  def forward(ctx, src, kernel_size, dilate_factor, ctrl):
+  def forward(ctx, src, kernel_size, dilate_factor):
     ctx.kernel_size = kernel_size
     ctx.dilate_factor = dilate_factor
-    ctx.ctrl = ctrl
+
     # print 'debug: src size', src.size()
     dst = torch.cuda.FloatTensor(src.size())
     # print 'debug: dst size', dst.size()
@@ -39,25 +39,24 @@ class GenericShiftFn(Function):
 
 class GenericShiftCtrlFn(Function):
   @staticmethod
-  def forward(ctx, src, kernel_size, dilate_factor, ctrl):
+  def forward(ctx, src, kernel_size, dilate_factor, ctrl): # ctrl is of size (N, C, H, W, kernel_size, kernel_size)
     ctx.kernel_size = kernel_size
     ctx.dilate_factor = dilate_factor
-    ctx.ctrl = ctrl
+    ctx.ctrl_ = ctrl_
     # print 'debug: src size', src.size()
     dst = torch.cuda.FloatTensor(src.size())
     # print 'debug: dst size', dst.size()
-    ret = shiftnet_cuda.shift_generic_nchw_ctrl(src, dst, ctrl, kernel_size, dilate_factor, 1)
+
+    ret = shiftnet_cuda.shift_generic_nchw_ctrl(src, dst, ctrl_, kernel_size, dilate_factor, 1)
     assert ret == 1, "GenericShiftFn: forward: invalid args, your kernel or dilation are probably too large"
     return dst
 
   @staticmethod
   def backward(ctx, grad_dst):
     grad_src = torch.cuda.FloatTensor(grad_dst.data.size())
-    ret = shiftnet_cuda.shift_generic_nchw_ctrl(grad_dst.data, grad_src, ctx.ctrl, ctx.kernel_size, ctx.dilate_factor, -1)
+    ret = shiftnet_cuda.shift_generic_nchw_ctrl(grad_dst.data, grad_src, ctx.ctrl_, ctx.kernel_size, ctx.dilate_factor, -1)
     assert ret == 1, "GenericShiftFn: backward: invalid args, your kernel or dilation are probably too large"
-    return Variable(grad_src, requires_grad=grad_dst.requires_grad), None, None
-
-
+    return Variable(grad_src, requires_grad=grad_dst.requires_grad), None, None, 
 
 
 class Shift3x3_cuda(torch.nn.Module):
@@ -77,11 +76,12 @@ class GenericShift_cuda(torch.nn.Module):
         return GenericShiftFn.apply(x, self._kernel_size, self._dilate_factor)
 
 class GenericShiftCtrl_cuda(torch.nn.Module):
-    def __init__(self, kernel_size, dilate_factor=1, ctrl):
+    def __init__(self, kernel_size, dilate_factor=1):
         super(GenericShift_cuda, self).__init__()
         self._kernel_size = kernel_size
         self._dilate_factor = dilate_factor
-        self._ctrl = ctrl
+        self._ctrl = None
 
-    def forward(self, x):
+    def forward(self, x, ctrl):
+        self._ctrl = ctrl
         return GenericShiftCtrlFn.apply(x, self._kernel_size, self._dilate_factor, self._ctrl)

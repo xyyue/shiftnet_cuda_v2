@@ -18,3 +18,4 @@ int moduloshift3x3_nchw(THCudaTensor *src_tensor, THCudaTensor *dst_tensor);
 int moduloshift3x3bwd_nchw(THCudaTensor *src_tensor, THCudaTensor *dst_tensor);
 int moduloshiftgeneric_nchw(THCudaTensor *src_tensor, THCudaTensor *dst_tensor, int kernel_size, int dilate_factor, int direction);
 int shift_generic_nchw_ctrl(THCudaTensor *src_tensor, THCudaTensor *dst_tensor, THCudaTensor *ctrl_tensor, int kernel_size, int dilate_factor, int direction);
+int shift_generic_nchw_ctrl_grad(THCudaTensor *src_tensor, THCudaTensor *dst_tensor, THCudaTensor *ctrl_tensor, THCudaTensor *ctrl_grad_tensor, int kernel_size, int dilate_factor, int direction);

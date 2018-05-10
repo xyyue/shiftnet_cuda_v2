@@ -59,3 +59,17 @@ void shiftnet_cuda_shift_generic_nchw_float32_ctrl(
     int dilate_factor,
     int direction,
     cudaStream_t stream);
+
+void shiftnet_cuda_shift_generic_nchw_float32_ctrl2D(
+    float *src,
+    float *dst,
+    float *ctrl,
+    float *ctrl_grad,
+    int batch_sz,
+    int channels,
+    int height,
+    int width,
+    int kernel_size,
+    int dilate_factor,
+    int direction,
+    cudaStream_t stream);
