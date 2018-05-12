@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 #include <cuda_runtime.h>
-
+#include <stdio.h>
 //#include <algorithmic>
 
 #define MAX_BLOCKS 128
@@ -257,6 +257,7 @@ __global__ void shiftnet_cuda_shift_generic_nchw_float32_kernel_tilein16x16_ctrl
     {
       if (w_idx >= 0 && w_idx < width && h_idx >= 0 && h_idx < height) {
         const int cache_idx = (w_tile_off + w_shift) + 16 * (h_tile_off + h_shift);
+        // printf("w_tile_off: %d, w_shift: %d, h_tile_off: %d, h_shift: %d, Idx : %d \n", w_tile_off, w_shift, h_tile_off, h_shift, cache_idx);
         dst[buf_idx] = cache[cache_idx];
       }
     }
@@ -328,7 +329,17 @@ __global__ void shiftnet_cuda_shift_generic_nchw_float32_kernel_tilein16x16_ctrl
       if (w_idx >= 0 && w_idx < width && h_idx >= 0 && h_idx < height) {
         const int cache_idx = (w_tile_off + w_shift) + 16 * (h_tile_off + h_shift);
         dst[buf_idx] = cache[cache_idx];
+        if (direction == -1) {
+          const int h_in_kernel = -1 * h_shift + kernel_size / 2;
+          const int w_in_kernel = -1 * w_shift + kernel_size / 2;
+          const int grad_idx = w_in_kernel + h_in_kernel * kernel_size + kernel_size * kernel_size * (w_idx + width * (h_idx + height * (tile_ch + channels * tile_batch_idx)));
+          const int cache_grad_idx = (w_tile_off - w_shift) + 16 * (h_tile_off - h_shift);
+          ctrl_grad[grad_idx] = cache[cache_grad_idx];
+          printf("w_idx: %d, h_idx: %d, h_in_kernel: %d, w_in_kernel: %d, w_shift: %d, h_shift: %d, val: %d\n", w_idx, h_idx, h_in_kernel, w_in_kernel, w_shift, h_shift, (int)cache[cache_grad_idx]);
+        }
       }
+
+
     }
     __syncthreads();
   }

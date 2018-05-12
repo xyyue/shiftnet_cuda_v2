@@ -9,7 +9,7 @@ import torch.cuda
 
 num = 6 
 n_batch = 1
-n_channel = 9
+n_channel = 2
 def main():
   pattern = np.arange(num * num).reshape(num, num)
   src_buf = np.zeros((n_batch, n_channel, num, num)).astype(np.float32)
@@ -23,13 +23,19 @@ def main():
 
   y_hin = torch.zeros(n_batch, n_channel, num, num).type(torch.FloatTensor)
 
+  x_back_cpu = torch.zeros(n_batch, n_channel, num, num).type(torch.FloatTensor)
+
   x = x_hin.cuda()
   y = y_hin.cuda()
+  x_back = x_back_cpu.cuda()
+
+  ctrl_grad_cpu = torch.zeros(n_batch, n_channel, num, num, 3, 3).type(torch.FloatTensor)
+  ctrl_grad = ctrl_grad_cpu.cuda()
 
   ctrl_cpu = torch.ones(n_batch, n_channel, num, num, 2)
-  ctrl_cpu[0][0][0][0][0] = 2
-  ctrl_cpu[0][0][0][0][1] = 2
-  ctrl_cpu[0][0][4][4][0] = -2
+  ctrl_cpu[0][0][0][0][0] = 1
+  ctrl_cpu[0][0][0][0][1] = 0
+  ctrl_cpu[0][0][4][4][0] = -1
   ctrl_cpu[0][0][4][4][1] = -1
   # ctrl_cpu = ctrl_cpu.type(torch.IntTensor)
   ctrl = ctrl_cpu.cuda()
@@ -37,12 +43,35 @@ def main():
   ret = shiftnet_cuda.shift_generic_nchw_ctrl(x, y, ctrl, 3, 1, 1)
   assert ret == 1
 
-  x_hout = x.cpu()
-  y_hout = y.cpu()
+  ret = shiftnet_cuda.shift_generic_nchw_ctrl_grad(x, x_back, ctrl, ctrl_grad, 3, 1, -1)
+  assert ret == 1
 
+  # print("aaa")
+  x_hout = x.cpu()
+  # print("bbbb")
+  y_hout = y.cpu()
+  # print("abbbaa")
+  
+  res_back = x_back.cpu()
+  grad_back = ctrl_grad.cpu()
+
+  print("x_hout is: =========")
   print(x_hout[0,0,:num,:num])
-  for ch in range(9):
+  print("===============y_hout: ")
+  for ch in range(n_channel):
     print(y_hout[0,ch,:num,:num])
+    break
+
+  print("===============res_back: ")
+  for ch in range(n_channel):
+  	print(res_back[0,ch])
+  	break
+
+  print("===============grad_back: ")
+
+  for ch in range(n_channel):
+  	print(grad_back[0,ch])
+  	break
 
 if __name__ == "__main__":
   main()
