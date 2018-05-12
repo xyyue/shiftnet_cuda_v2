@@ -335,7 +335,7 @@ __global__ void shiftnet_cuda_shift_generic_nchw_float32_kernel_tilein16x16_ctrl
           const int grad_idx = w_in_kernel + h_in_kernel * kernel_size + kernel_size * kernel_size * (w_idx + width * (h_idx + height * (tile_ch + channels * tile_batch_idx)));
           const int cache_grad_idx = (w_tile_off - w_shift) + 16 * (h_tile_off - h_shift);
           ctrl_grad[grad_idx] = cache[cache_grad_idx];
-          printf("w_idx: %d, h_idx: %d, h_in_kernel: %d, w_in_kernel: %d, w_shift: %d, h_shift: %d, val: %d\n", w_idx, h_idx, h_in_kernel, w_in_kernel, w_shift, h_shift, (int)cache[cache_grad_idx]);
+          // printf("w_idx: %d, h_idx: %d, h_in_kernel: %d, w_in_kernel: %d, w_shift: %d, h_shift: %d, val: %d\n", w_idx, h_idx, h_in_kernel, w_in_kernel, w_shift, h_shift, (int)cache[cache_grad_idx]);
         }
       }
 
